@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🛍️ עגלת הקניות שלך</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #4CAF50; /* ירוק */
+      --secondary-color: #f44336; /* אדום */
+      --text-color: #333;
+      --light-gray: #f9f9f9;
+      --border-color: #ddd;
+      --shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      direction: rtl;
+      background-color: var(--light-gray);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 30px;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: var(--primary-color);
+      margin-bottom: 25px;
+    }
+
+    #user {
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 1.1em;
+      color: #555;
+    }
+
+    #errorMsg {
+      color: var(--secondary-color);
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: bold;
+      background-color: #ffebee;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid var(--secondary-color);
+      display: none; /* יוסתר כברירת מחדל */
+    }
+
+    /* עגלת קניות */
+    #cart-section {
+      border-top: 1px solid var(--border-color);
+      padding-top: 30px;
+      margin-top: 30px; /* שמירה על מרווח למקרה שיש אלמנטים לפני */
+      /* הסר border-top ו-padding-top אם זה האלמנט הראשון במיכל אחרי ה-user/error */
+    }
+
+    .cart-item {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .cart-item-details {
+      flex-grow: 1;
+      margin-inline-end: 15px;
+    }
+
+    .cart-item-details strong {
+      font-size: 1.1em;
+      color: var(--text-color);
+    }
+
+    .cart-item-controls {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .cart-item-controls input[type="number"] {
+      width: 60px;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      font-size: 1em;
+      text-align: center;
+      margin: 0 10px;
+    }
+
+    #total {
+      text-align: end;
+      font-size: 1.5em;
+      font-weight: bold;
+      color: var(--primary-color);
+      margin-top: 25px;
+      padding-top: 15px;
+      border-top: 2px solid var(--primary-color);
+    }
+
+
+    /* מוצרים */
+    #products-section {
+      border-top: 1px solid var(--border-color); /* הפרדה ויזואלית בין העגלה למוצרים */
+      padding-top: 30px;
+      margin-top: 30px;
+    }
+
+    .filter-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      align-items: flex-end;
+    }
+
+    .filter-controls label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    .filter-controls div {
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .filter-controls input[type="text"],
+    .filter-controls input[type="number"],
+    .filter-controls select {
+      width: calc(100% - 22px);
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+
+    .filter-controls button {
+        flex-shrink: 0;
+        height: 48px;
+        margin-top: auto;
+    }
+
+    .product {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      border: 1px solid var(--border-color);
+    }
+
+    .product-info {
+      flex-grow: 1;
+      margin-inline-end: 15px;
+    }
+
+    .product-info strong {
+      font-size: 1.2em;
+      color: var(--primary-color);
+    }
+
+    .product-info span {
+      display: block;
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background-color 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    button:hover {
+      background-color: #4CAF50;
+      filter: brightness(90%);
+    }
+
+    button.remove-btn {
+      background-color: var(--secondary-color);
+    }
+
+    button.remove-btn:hover {
+      background-color: #d32f2f;
+    }
+
+    /* הודעות ריקות */
+    .empty-message {
+      text-align: center;
+      color: #777;
+      padding: 20px;
+      background-color: #f0f0f0;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+
+    /* רספונסיביות בסיסית */
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+        margin: 10px auto;
+      }
+      .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .filter-controls div {
+        min-width: unset;
+        width: 100%;
+      }
+      .filter-controls input, .filter-controls select, .filter-controls button {
+        width: 100%;
+        margin-top: 10px;
+      }
+      .product, .cart-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .product-info, .cart-item-details {
+        margin-inline-end: 0;
+        margin-bottom: 10px;
+      }
+      button, .cart-item-controls {
+        width: 100%;
+        margin-top: 10px;
+        justify-content: center;
+      }
+      .cart-item-controls input[type="number"] {
+        width: 80px;
+        margin: 0 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🛍️ ברוכים הבאים לחנות שלנו!</h1>
+  <div id="user">מחובר כ: <span id="username">...</span></div>
+  <div id="errorMsg" style="display: none;"></div>
+
+  <div id="cart-section">
+    <h2>🛒 עגלת הקניות שלך</h2>
+    <div id="cart">
+      <p class="empty-message">העגלה שלך ריקה כרגע.</p>
+    </div>
+    <div id="total"></div>
+  </div>
+
+  <div id="products-section">
+    <h2>📦 המוצרים הזמינים</h2>
+    <div class="filter-controls">
+      <div>
+        <label for="searchTerm">חיפוש:</label>
+        <input type="text" id="searchTerm" placeholder="שם מוצר או תיאור" />
+      </div>
+      <div>
+        <label for="categoryFilter">קטגוריה:</label>
+        <select id="categoryFilter">
+          <option value="">כל הקטגוריות</option>
+          </select>
+      </div>
+      <div>
+        <label for="minPrice">מחיר מ:</label>
+        <input type="number" id="minPrice" placeholder="מינימום" min="0" />
+      </div>
+      <div>
+        <label for="maxPrice">מחיר עד:</label>
+        <input type="number" id="maxPrice" placeholder="מקסימום" min="0" />
+      </div>
+      <button onclick="applyFilters()">🔍 סנן מוצרים</button>
+      <button onclick="clearFilters()" style="background-color: #6c757d;">הסר סינון</button>
+    </div>
+    
+    <div id="products">
+      <p class="empty-message">טוען מוצרים...</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("userId");
+  const username = localStorage.getItem("username");
+  const errorMsgDiv = document.getElementById("errorMsg");
+
+  document.getElementById("username").innerText = username || "אורח";
+
+  // פונקציה להצגת הודעות שגיאה/הצלחה
+  function showErrorMessage(message, isError = true) {
+    errorMsgDiv.innerText = message;
+    errorMsgDiv.style.backgroundColor = isError ? '#ffebee' : '#e8f5e9'; // אדום לשגיאה, ירוק להצלחה
+    errorMsgDiv.style.borderColor = isError ? '#f44336' : '#4CAF50';
+    errorMsgDiv.style.color = isError ? '#f44336' : '#4CAF50';
+    errorMsgDiv.style.display = 'block';
+    setTimeout(() => {
+      errorMsgDiv.style.display = 'none';
+    }, 5000); // הסתר לאחר 5 שניות
+  }
+
+  if (!token || !userId) {
+    showErrorMessage("אנא התחבר כדי להשתמש בחנות. מנתב לדף ההתחברות...", true);
+    setTimeout(() => { window.location.href = "index.html"; }, 2000);
+  } else {
+    fetchProducts();
+    loadCart();
+  }
+
+  let productsData = []; // ישמש לאחסון כל המוצרים לפני סינון מקומי
+  let currentCategoryList = []; // ישמש לאחסון רשימת קטגוריות ייחודיות
+
+  async function fetchProducts(filters = {}) {
+    try {
+      const queryParams = new URLSearchParams(filters).toString();
+      const url = `http://localhost:8000/api/products${queryParams ? '?' + queryParams : ''}`;
+
+      const res = await fetch(url, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+            showErrorMessage("האימות נכשל. אנא התחבר מחדש.", true);
+            localStorage.clear();
+            setTimeout(() => { window.location.href = "index.html"; }, 2000);
+            return;
+        }
+        showErrorMessage(`שגיאה בטעינת מוצרים: ${res.status} ${res.statusText}`, true);
+        return;
+      }
+      const data = await res.json();
+      console.log("מוצרים נטענו:", data);
+      if (!Array.isArray(data)) {
+        showErrorMessage("נתוני המוצרים אינם תקינים.", true);
+        return;
+      }
+      productsData = data; // שמור את הנתונים המלאים (למקרה שתצטרך אותם לסינון צד לקוח מאוחר יותר)
+      renderProducts(productsData);
+      populateCategoryFilter(productsData); // עדכן את רשימת הקטגוריות
+      errorMsgDiv.style.display = 'none'; // הסתר שגיאה אם הכל עבר בהצלחה
+    } catch (err) {
+      showErrorMessage("שגיאה בטעינת מוצרים: " + err.message, true);
+      console.error(err);
+    }
+  }
+
+  // פונקציה למילוי רשימת הקטגוריות ב-select box
+  function populateCategoryFilter(products) {
+    const categorySelect = document.getElementById('categoryFilter');
+    const categories = [...new Set(products.map(p => p.product_category).filter(Boolean))].sort(); // קטגוריות ייחודיות וממוינות
+    
+    // שמור את רשימת הקטגוריות המלאה, למקרה שנרצה לאכלס שוב
+    currentCategoryList = categories; 
+
+    // שמור את הערך הנבחר לפני עדכון האפשרויות
+    const selectedCategory = categorySelect.value; 
+
+    categorySelect.innerHTML = '<option value="">כל הקטגוריות</option>'; // אפשרות ברירת מחדל
+    categories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.innerText = cat;
+      categorySelect.appendChild(option);
+    });
+
+    // החזר את הערך הנבחר אם הוא עדיין קיים ברשימה החדשה
+    if (categories.includes(selectedCategory)) {
+        categorySelect.value = selectedCategory;
+    }
+  }
+
+  function renderProducts(products) {
+    const container = document.getElementById("products");
+    container.innerHTML = "";
+    if (products.length === 0) {
+        container.innerHTML = '<p class="empty-message">אין מוצרים זמינים כרגע או שלא נמצאו תוצאות לחיפוש.</p>';
+        return;
+    }
+    products.forEach(p => {
+      const div = document.createElement("div");
+      div.className = "product";
+      div.innerHTML = `
+        <div class="product-info">
+          <strong>${p.product_name}</strong>
+          <span>קטגוריה: ${p.product_category || 'כללי'}</span>
+          <span>מחיר: ₪${p.product_price.toFixed(2)}</span>
+          <span>במלאי: ${p.product_quantity} יח'</span>
+        </div>
+        <button onclick="addToCart('${p._id}')">➕ הוסף לעגלה</button>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function applyFilters() {
+    const searchTerm = document.getElementById('searchTerm').value;
+    const category = document.getElementById('categoryFilter').value;
+    const minPrice = document.getElementById('minPrice').value;
+    const maxPrice = document.getElementById('maxPrice').value;
+
+    const filters = {};
+    if (searchTerm) filters.searchTerm = searchTerm;
+    if (category) filters.category = category;
+    if (minPrice) filters.minPrice = minPrice;
+    if (maxPrice) filters.maxPrice = maxPrice;
+
+    fetchProducts(filters); // שלח את המסננים לבקאנד
+  }
+
+  function clearFilters() {
+    document.getElementById('searchTerm').value = '';
+    document.getElementById('categoryFilter').value = ''; // בחירת אפשרות "כל הקטגוריות"
+    document.getElementById('minPrice').value = '';
+    document.getElementById('maxPrice').value = '';
+    applyFilters(); // הפעל את הפילטרים מחדש ללא ערכים
+  }
+
+
+  async function addToCart(productId, quantity = 1) {
+    const userId = localStorage.getItem("userId");
+
+    if (!userId) {
+      showErrorMessage("משתמש לא מזוהה. אנא התחבר מחדש.", true);
+      return;
+    }
+
+    console.log("Adding to cart:", {
+      userId: userId,
+      productId: productId,
+      quantity: quantity
+    });
+
+    try {
+      const res = await fetch("http://localhost:8000/api/cart/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("token")
+        },
+        body: JSON.stringify({
+          userId: userId,
+          productId: productId,
+          quantity: quantity
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Error adding to cart:", errorData);
+        showErrorMessage(errorData.message || "שגיאה בהוספה לעגלה", true);
+      } else {
+        const data = await res.json();
+        console.log("נוסף לעגלה בהצלחה:", data);
+        showErrorMessage("המוצר נוסף לעגלה בהצלחה!", false);
+        loadCart(); // רענן עגלת קניות
+        applyFilters(); // רענן רשימת מוצרים עם המסננים הנוכחיים כדי להציג מלאי מעודכן
+      }
+    } catch (err) {
+      console.error("שגיאה:", err);
+      showErrorMessage("שגיאה בתקשורת עם השרת בעת הוספה לעגלה.", true);
+    }
+  }
+
+  async function loadCart() {
+    try {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
+      if (!token || !userId) {
+        showErrorMessage("אנא התחבר כדי לראות את העגלה.", true);
+        return;
+      }
+      const res = await fetch(`http://localhost:8000/api/cart?userId=${userId}`, {
+        headers: {
+          "Authorization": "Bearer " + token
+        }
+      });
+      if (!res.ok) {
+        if (res.status === 404) {
+            console.log("Cart not found for user. Displaying empty cart.");
+            renderCart([]);
+            errorMsgDiv.style.display = 'none';
+            return;
+        }
+        showErrorMessage(`שגיאה בטעינת העגלה: ${res.status} ${res.statusText}`, true);
+        throw new Error("Failed to load cart");
+      }
+      const cart = await res.json();
+      console.log("עגלה נטענה:", cart);
+      if (!cart.items || !Array.isArray(cart.items)) {
+        showErrorMessage("נתוני העגלה אינם תקינים.", true);
+        return;
+      }
+      renderCart(cart.items);
+      errorMsgDiv.style.display = 'none';
+    } catch (err) {
+      console.error(err);
+      showErrorMessage("שגיאה בטעינת העגלה: " + err.message, true);
+    }
+  }
+
+  function renderCart(items) {
+    const cartDiv = document.getElementById("cart");
+    const totalDiv = document.getElementById("total");
+    cartDiv.innerHTML = "";
+    let total = 0;
+    if (items.length === 0) {
+        cartDiv.innerHTML = '<p class="empty-message">העגלה שלך ריקה כרגע.</p>';
+    }
+    items.forEach(item => {
+      if (item.product) {
+        total += item.product.product_price * item.quantity;
+        const div = document.createElement("div");
+        div.className = "cart-item";
+        div.innerHTML = `
+          <div class="cart-item-details">
+            <strong>${item.product.product_name}</strong> - ₪${item.product.product_price.toFixed(2)}
+          </div>
+          <div class="cart-item-controls">
+            <input type="number" value="${item.quantity}" min="1" 
+                   onchange="updateQuantity('${item.product._id}', this.value)"
+                   onfocus="this.oldValue = this.value;"
+                   onblur="if(this.value !== this.oldValue) this.onchange();">
+            <button class="remove-btn" onclick="removeItem('${item.product._id}')">🗑️ הסר</button>
+          </div>
+        `;
+        cartDiv.appendChild(div);
+      } else {
+          console.warn("Product data missing for cart item:", item);
+      }
+    });
+    totalDiv.innerHTML = `<h3>סה"כ לתשלום: ₪${total.toFixed(2)}</h3>`;
+  }
+
+  async function updateQuantity(productId, quantity) {
+    if (!token || !userId) {
+      showErrorMessage("אנא התחבר לפני עדכון כמות.", true);
+      return;
+    }
+    quantity = parseInt(quantity);
+    if (isNaN(quantity) || quantity < 1) {
+        showErrorMessage("הכמות חייבת להיות מספר חיובי.", true);
+        loadCart();
+        return;
+    }
+
+    try {
+      console.log("Updating quantity:", { userId, productId, quantity: quantity });
+      const res = await fetch(`http://localhost:8000/api/cart/items/${productId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId, quantity: quantity })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        console.error("Error updating quantity:", errData);
+        showErrorMessage("שגיאה בעדכון הכמות: " + (errData.message || res.statusText), true);
+        loadCart();
+        return;
+      }
+      await loadCart();
+      showErrorMessage("כמות עודכנה בהצלחה!", false);
+      applyFilters(); // רענן רשימת מוצרים כדי להציג מלאי מעודכן
+    } catch (err) {
+      showErrorMessage("שגיאה בעדכון הכמות: " + err.message, true);
+      console.error(err);
+    }
+  }
+
+  async function removeItem(productId) {
+    if (!token || !userId) {
+      showErrorMessage("אנא התחבר לפני הסרה.", true);
+      return;
+    }
+    try {
+      console.log("Removing item:", { userId, productId });
+      const res = await fetch(`http://localhost:8000/api/cart/items/${productId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        console.error("Error removing item:", errData);
+        showErrorMessage("שגיאה בהסרת הפריט: " + (errData.message || res.statusText), true);
+        return;
+      }
+      await loadCart();
+      showErrorMessage("הפריט הוסר מהעגלה.", false);
+      applyFilters(); // רענן רשימת מוצרים כדי להציג מלאי מעודכן
+    } catch (err) {
+      showErrorMessage("שגיאה בהסרת הפריט: " + err.message, true);
+      console.error(err);
+    }
+  }
+
+</script>
+
+</body>
+</html>
